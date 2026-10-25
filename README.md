@@ -2,6 +2,8 @@
 
 Nimbus is a private, multi-user file-storage application. The repository contains a FastAPI service, a plain HTML/CSS/JavaScript interface, SQL migrations, a local filesystem object adapter, and an S3-compatible adapter for MinIO.
 
+For step-by-step instructions in Arabic, see [RUN_AR.md](./RUN_AR.md).
+
 ## Current implementation
 
 - Cookie-backed opaque sessions, Argon2id password hashes, CSRF checks on authenticated mutations, and role-guarded administrator user listing.
