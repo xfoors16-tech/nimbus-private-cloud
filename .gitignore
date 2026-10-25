@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+!frontend/.env.production.example
+.snapshots/
+.vscode/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+data/
+node_modules/
+frontend/dist/
+*.db
