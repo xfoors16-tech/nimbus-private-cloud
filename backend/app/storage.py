@@ -1,9 +1,6 @@
 import os
 from pathlib import Path
 
-import boto3
-from botocore.exceptions import ClientError
-
 from app.config import get_settings
 
 
@@ -12,6 +9,9 @@ class ObjectStorage:
         self.settings = get_settings()
         self.client = None
         if self.settings.storage_backend == "s3":
+            import boto3
+            from botocore.exceptions import ClientError
+
             self.client = boto3.client(
                 "s3",
                 endpoint_url=self.settings.s3_endpoint_url,

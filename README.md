@@ -51,19 +51,37 @@ The UI is at `http://localhost:5173`, API docs at `http://localhost:8000/docs`, 
 
 Set both `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` in `.env` to provision the initial admin during API startup. Use a unique, long password; never use that mechanism as a production default. A normal user can register from the sign-in screen.
 
-## Public deployment: Netlify + Render + PostgreSQL + S3
+## No-card demo deployment: Netlify + PythonAnywhere
 
-The static frontend can be published on Netlify. The FastAPI server needs a separate public HTTPS host, a persistent PostgreSQL database, and S3-compatible object storage. The repository includes `netlify.toml` and `render.yaml`; these configure the static build and a **free Render API service only**. No paid resources or cloud accounts are created automatically.
+The repository is configured for Netlify static hosting and can run its FastAPI service on a PythonAnywhere free web app through the included WSGI adapter. This is a **small demonstration deployment**, not production cloud storage: PythonAnywhere's free account currently lists one web app, 512 MB disk space, and restricted outbound internet. The demo therefore uses SQLite and the account's local disk, with a 50 MiB quota per account and 5 MiB maximum upload. The total account disk is shared between code, installed packages, the database, and everyone’s uploaded files. Keep nonessential or sensitive files off the demo.
 
-1. Import this repository into Netlify using the repository's `netlify.toml`.
-2. In Render, create a Blueprint from the repository and apply `render.yaml`. The Blueprint provisions the API service with the name `nimbus-private-cloud-api-xfoors16`. Set the prompted `DATABASE_URL` to a persistent PostgreSQL connection string. A managed or external database may have usage limits or costs; check its retention and pricing before storing real data.
-3. Create a private S3-compatible bucket and API key in an object-storage provider. Set `S3_ENDPOINT_URL`, `S3_ACCESS_KEY`, and `S3_SECRET_KEY` in the Render service environment. For Cloudflare R2, the endpoint format is `https://<account-id>.r2.cloudflarestorage.com`, and `S3_REGION` must be `auto`; create the `nimbus-private-files` bucket first. Do not put these storage credentials in Netlify or frontend variables.
-4. After Netlify assigns the site's URL, set Render's `CORS_ORIGINS` to that exact origin (for example, `https://your-site.netlify.app`, with no trailing slash), then redeploy/restart the API.
-5. Wait for Render's `/api/v1/health` health check. Open the Netlify URL and register a test account; test login, profile-photo upload, and file upload/download before sharing the site.
+The Render blueprint is optional for people who later choose paid/external hosting. For the no-card path:
 
-The Netlify rewrite proxies `/api/*` to the named Render service, so browser API calls and secure session cookies stay on the Netlify origin; no API URL build variable is needed. If you change the Render service name, update the proxy target in `netlify.toml` to match. Netlify proxy rewrites time out after 26 seconds, so large or slow uploads may need a custom-domain/direct-API setup or direct signed S3 uploads.
+1. Import this repository into Netlify using `netlify.toml`. The API proxy target must match your PythonAnywhere username. In `netlify.toml`, replace `https://YOUR_USERNAME.pythonanywhere.com/api/:splat` with `https://<your-PythonAnywhere-username>.pythonanywhere.com/api/:splat`.
+2. Create the PythonAnywhere **Beginner/free** account and note its username.
+3. In a PythonAnywhere Bash console, clone the public repository and install the small WSGI-compatible dependency set:
 
-The free Render web service can sleep while idle, and the first request may be slow. This deployment configuration is a starting point, not a claim that the service is already published. Never use ephemeral local-disk storage for users' files in production; configure and verify the S3 bucket and persistent database first. Keep all secrets in provider environment settings, not in Git.
+   ```bash
+   git clone https://github.com/xfoors16-tech/nimbus-private-cloud.git
+   cd nimbus-private-cloud/backend
+   mkvirtualenv --python=/usr/bin/python3.10 nimbus
+   pip install -r requirements-pythonanywhere.txt
+   mkdir -p ~/nimbus-data/objects
+   export DATABASE_URL="sqlite:////home/$USER/nimbus-data/private-cloud.db"
+   export STORAGE_BACKEND=local
+   export STORAGE_ROOT="/home/$USER/nimbus-data/objects"
+   python -m alembic upgrade head
+   ```
+
+   Choose a Python version actually offered in your PythonAnywhere Web tab and use its matching executable in the `mkvirtualenv` command if Python 3.10 is unavailable.
+4. In PythonAnywhere **Web**, create a manual-config web app with the same Python version and set its virtualenv to `/home/<username>/.virtualenvs/nimbus`.
+5. Open its WSGI configuration file. Add `/home/<username>/nimbus-private-cloud/backend` to `sys.path`, then import `application` from `pythonanywhere_wsgi`. Replace `<username>` in paths with your account username. Set `CORS_ORIGINS` to the exact Netlify site origin in this WSGI file; keep cookies secure, and retain the demo storage limits.
+6. Reload the PythonAnywhere web app. Visit `https://<username>.pythonanywhere.com/api/v1/health`; it should return `{"status":"ok"}`.
+7. Update Netlify's `/api/*` rewrite target in `netlify.toml` to that exact PythonAnywhere hostname, push the change to GitHub, and wait for Netlify to redeploy. Then test registration, login, profile photo, and small file upload/download from the Netlify site.
+
+PythonAnywhere free accounts restrict some outbound internet connections; this deployment intentionally doesn't call S3 or another external storage service. Local persistent disk is limited, so the 50 MiB per-user quota is only an upper limit, not extra space promised to every registered account. Netlify's proxy has a 26-second timeout. Do not use this arrangement for sensitive personal data, important files, or production service guarantees. Keep the machine's local Netlify proxy setting and the production deploy target separate.
+
+Never publish a secret or user data in GitHub. Don't configure cloud storage credentials on this free/local-disk deployment.
 
 ## Tests
 
