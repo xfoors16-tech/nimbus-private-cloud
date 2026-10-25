@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: nimbus-private-cloud-api
+    name: nimbus-private-cloud-api-xfoors16
     runtime: docker
     plan: free
     dockerfilePath: ./backend/Dockerfile
@@ -24,7 +24,7 @@ services:
       - key: SESSION_COOKIE_SECURE
         value: "true"
       - key: SESSION_COOKIE_SAMESITE
-        value: none
+        value: lax
       - key: CORS_ORIGINS
         sync: false
       - key: DEFAULT_QUOTA_BYTES

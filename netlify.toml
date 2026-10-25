@@ -7,6 +7,12 @@ publish = "dist"
 NODE_VERSION = "22"
 
 [[redirects]]
+from = "/api/*"
+to = "https://nimbus-private-cloud-api-xfoors16.onrender.com/api/:splat"
+status = 200
+force = true
+
+[[redirects]]
 from = "/*"
 to = "/index.html"
 status = 200
